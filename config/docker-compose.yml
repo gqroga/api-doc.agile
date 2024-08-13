@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: doc-pulse.postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: DOCPULSE_ADM
+      POSTGRES_PASSWORD: DOCPULSE_ADM
+      POSTGRES_DB: GDBDOCPULSE
+    volumes:
+      - ./postgres/db_init.sql:/docker-entrypoint-initdb.d/db_init.sql
+      - postgres_data:/var/lib/postgresql/data
+
+  flyway:
+    image: flyway/flyway
+    container_name: doc-pulse.flyway
+    command: -url=jdbc:postgresql://postgres:5432/GDBDOCPULSE -user=DOCPULSE_ADM -password=DOCPULSE_ADM -schemas=docpulse_adm -connectRetries=100 migrate
+    depends_on:
+      - postgres
+    volumes:
+      - ../../src/main/resources/db/migration:/flyway/sql
+
+  redis:
+    image: redis:latest
+    container_name: doc-pulse.redis
+    restart: always
+    ports:
+      - "6380:6380"
+    volumes:
+      - /path/to/local/dаta:/root/redis
+      - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD=DOCPULSE_REDIS
+
+volumes:
+  postgres_data:
+    driver: local
